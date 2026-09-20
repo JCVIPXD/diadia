@@ -67,7 +67,8 @@ cd android
 - Instalar el APK en el celular requiere permitir "instalar apps desconocidas". Es una versión de depuración, sin firmar para tienda.
 - **La app instalada guarda sus datos aparte de la PWA de Chrome.** Para pasar de una a otra: Exportar en una e Importar en la otra.
 - Los avisos se reprograman solos (14 días hacia delante) al cambiar hábitos, marcas o ajustes, y no avisan de lo que ya hiciste ese día.
-- Por privacidad la copia de seguridad automática de Android está desactivada (`allowBackup=false`).
+- Por privacidad la copia de seguridad automática de Android está desactivada (`allowBackup=false`): si desinstalas la app, los datos se pierden; exporta una copia antes.
+- Capacitor 8 compila con Java 21. Si no lo tienes, Gradle lo descarga solo (`org.gradle.toolchains.foojay-resolver-convention` en `android/settings.gradle`).
 
 ## Movimiento
 
@@ -88,12 +89,12 @@ Hecho:
 - [x] Hábitos con cantidad (vasos, minutos, páginas)
 - [x] Pausa de hábitos sin perder la racha
 - [x] Ajustes: tema claro/oscuro, hora de corte del día
-- [x] Recordatorios en Android (Capacitor): código y APK; **sin probar en un dispositivo real**
+- [x] Recordatorios en Android (Capacitor). Verificado en un emulador (Android 16): alarmas exactas programadas, aviso entregado a la hora, se cancela el de hoy al marcar el hábito, los datos persisten al reiniciar, y compartir la copia abre el menú de Android. **Falta probarlo en un teléfono real.**
 - [x] Tests automáticos de la lógica, la fusión de copias y el plan de recordatorios
 
 Pendiente:
 
-1. [ ] **Probar los recordatorios en un Android real** y ajustar lo que falle (batería, permisos, hora exacta).
+1. [ ] **Probar los recordatorios en tu teléfono real.** Algunos fabricantes (Xiaomi, Samsung, Huawei…) matan las alarmas de apps en segundo plano: puede hacer falta desactivar el ahorro de batería para la app.
 2. [ ] **Sincronizar celular y laptop sin servidor de terceros.** Hoy es exportar/importar (con "Compartir" en Android). Sincronización directa: WebRTC con emparejamiento por código o QR.
 3. [ ] Reordenar tareas; tareas con hora o franja del día.
 4. [ ] Tests de pantallas (hoy solo hay de lógica y datos).
