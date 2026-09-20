@@ -57,7 +57,7 @@ export default function HabitForm({
   const toggleDay = (d: number) => setDays(cur => (cur.includes(d) ? cur.filter(x => x !== d) : [...cur, d]))
 
   return (
-    <form className="stack" onSubmit={submit}>
+    <form className="stack screen" onSubmit={submit}>
       <header className="head">
         <h1>{habit ? 'Editar hábito' : 'Nuevo hábito'}</h1>
       </header>

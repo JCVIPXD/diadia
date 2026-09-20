@@ -1,32 +1,37 @@
 import { useState, type FormEvent } from 'react'
+import Check from './Check'
 import { addTask, dropTask, moveTask, toggleTask, type Task } from './db'
+import { buzz } from './haptics'
 import { addDays } from './habits'
 import { useTasks } from './hooks'
 
 const SOFT_TASK_LIMIT = 7
 
-function Check({ on }: { on: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity={on ? 1 : 0}>
-      <path d="M5 12.5l4.5 4.5L19 7.5" />
-    </svg>
-  )
-}
-
 function TaskRow({ task }: { task: Task }) {
+  const [leaving, setLeaving] = useState(false)
   const done = !!task.doneAt
+
+  // Se desliza hacia fuera y solo entonces se borra, para que no desaparezca de golpe.
+  function remove() {
+    setLeaving(true)
+    setTimeout(() => dropTask(task.id), 180)
+  }
+
   return (
-    <li className={`task${done ? ' is-done' : ''}`}>
+    <li className={`task${done ? ' is-done' : ''}${leaving ? ' leaving' : ''}`}>
       <button
         className={`check small${done ? ' full' : ''}`}
         aria-pressed={done}
         aria-label={`${done ? 'Deshacer' : 'Completar'}: ${task.title}`}
-        onClick={() => toggleTask(task.id, !done)}
+        onClick={() => {
+          if (!done) buzz()
+          toggleTask(task.id, !done)
+        }}
       >
-        <Check on={done} />
+        <Check />
       </button>
       <span className="task-title">{task.title}</span>
-      <button className="x" aria-label={`Quitar: ${task.title}`} onClick={() => dropTask(task.id)}>
+      <button className="x" aria-label={`Quitar: ${task.title}`} onClick={remove}>
         ×
       </button>
     </li>
@@ -57,7 +62,7 @@ export default function Tasks({ day }: { day: string }) {
   return (
     <section className="tasks">
       {leftovers.length > 0 && (
-        <div className="carry">
+        <div className="carry rise">
           <h2>Sin terminar de antes</h2>
           <p className="sub">Decide con calma: pásala a hoy o suéltala.</p>
           <ul className="list">

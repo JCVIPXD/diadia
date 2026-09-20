@@ -42,11 +42,32 @@ src/
 
 `.github/workflows/deploy.yml` compila y publica en cada push a `main`. La app se sirve en `/<nombre-del-repo>/` (variable `BASE_PATH`). Solo se publica el código; los datos quedan en cada dispositivo. En el repositorio hay que activar Settings → Pages → Source: GitHub Actions.
 
+## Movimiento
+
+Todo con CSS (sin librerías): transición al cambiar de pantalla, píldora deslizante en la navegación, palomita que se dibuja, anillo que se llena y brilla al completar el día, entrada escalonada de filas, tareas que se deslizan al quitarlas, y vibración corta al completar (solo Android). Con `prefers-reduced-motion` todo el movimiento se desactiva.
+
 ## Hoja de ruta
 
-1. [x] Base + núcleo: PWA, hábitos, pantalla Hoy, versión mínima, racha con perdón
-2. [x] Tareas de hoy, franjas del día y copia de seguridad (exportar/importar con fusión)
-3. [ ] Progreso: detalle del hábito con calendario de calor, check-in diario (ánimo, energía, horas de sueño), revisión semanal
-4. [ ] Recordatorios en Android (envoltorio Capacitor con notificaciones locales; las PWA no pueden programarlas de forma fiable)
-5. [ ] Sincronización directa entre dispositivos sin servidor de terceros
-6. [ ] Pulido: animaciones, textos, iconos
+Hecho:
+
+- [x] Hábitos, pantalla Hoy, versión mínima, racha con perdón, franjas del día
+- [x] Tareas de hoy / mañana / pendientes de antes
+- [x] Copia de seguridad con fusión, publicación en GitHub Pages
+- [x] Animaciones y transiciones
+
+Pendiente, por prioridad:
+
+1. [ ] **Marcar o corregir días anteriores.** Hoy solo se puede marcar el día actual: olvidar marcar ayer rompe la racha sin motivo.
+2. [ ] **Recordatorios y alarmas en Android** (envoltorio Capacitor con notificaciones locales; una PWA sola no puede programarlas de forma fiable). Hora opcional por hábito y tarea.
+3. [ ] **Seguimiento del sueño:** hora de acostarse y de levantarse, y regularidad frente a la hora objetivo.
+4. [ ] **Detalle del hábito:** calendario de calor, mejor racha, cumplimiento por semana.
+5. [ ] **Check-in diario** (ánimo, energía) y **revisión semanal**.
+6. [ ] **Sincronizar celular y laptop sin servidor de terceros** (hoy es exportar/importar a mano).
+7. [ ] Hábitos numéricos (minutos, vasos de agua).
+8. [ ] Pausa o vacaciones sin perder la racha.
+9. [ ] Editar y reordenar tareas; deshacer al quitar una tarea; tareas con hora o franja.
+10. [ ] Notas por día.
+11. [ ] Ajustes: tema claro/oscuro, hora de corte del día (hoy fija a las 4am).
+12. [ ] Tests automáticos de importar/fusionar y de las pantallas (hoy solo está probada la lógica de rachas).
+13. [ ] Iconos y pantalla de inicio pulidos, y aviso de "nueva versión disponible".
+14. [ ] Si algún día es comercial: cuentas, sincronización en la nube y monetización.

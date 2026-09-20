@@ -1,4 +1,7 @@
+import { useEffect, useState, type CSSProperties } from 'react'
+import Check from './Check'
 import { setCompletion, type Period } from './db'
+import { buzz } from './haptics'
 import { isScheduled, parseDate, streak, weekCount, weeklyTarget } from './habits'
 import { useHabitData, useToday, type HabitData } from './hooks'
 import Tasks from './Tasks'
@@ -8,33 +11,27 @@ const dateFormat = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeri
 function Ring({ done, total }: { done: number; total: number }) {
   const r = 28
   const c = 2 * Math.PI * r
+  const target = total ? done / total : 0
+  // Arranca en 0 y sube al valor real tras el primer pintado, para que el anillo se llene al entrar.
+  const [shown, setShown] = useState(0)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(target))
+    return () => cancelAnimationFrame(id)
+  }, [target])
+  const complete = total > 0 && done === total
+
   return (
-    <div className="ring" role="img" aria-label={`${done} de ${total} hábitos hoy`}>
+    <div className={`ring${complete ? ' complete' : ''}`} role="img" aria-label={`${done} de ${total} hábitos hoy`}>
       <svg width="64" height="64" viewBox="0 0 64 64">
         <circle className="track" cx="32" cy="32" r={r} />
-        <circle
-          className="fill"
-          cx="32"
-          cy="32"
-          r={r}
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - (total ? done / total : 0))}
-        />
+        <circle className="fill" cx="32" cy="32" r={r} strokeDasharray={c} strokeDashoffset={c * (1 - shown)} />
       </svg>
       <span>{total ? `${done}/${total}` : '–'}</span>
     </div>
   )
 }
 
-function Check() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12.5l4.5 4.5L19 7.5" />
-    </svg>
-  )
-}
-
-function HabitRow({ data, day }: { data: HabitData; day: string }) {
+function HabitRow({ data, day, index }: { data: HabitData; day: string; index: number }) {
   const { habit, done } = data
   const mark = done.get(day)
   const st = streak(habit, done, day)
@@ -43,12 +40,15 @@ function HabitRow({ data, day }: { data: HabitData; day: string }) {
   const weekMet = weekly && !mark && doneThisWeek >= weeklyTarget(habit)
 
   return (
-    <li className={`row${mark ? ' is-done' : ''}${weekMet ? ' is-met' : ''}`}>
+    <li className={`row${mark ? ' is-done' : ''}${weekMet ? ' is-met' : ''}`} style={{ '--i': index } as CSSProperties}>
       <button
         className={`check ${mark?.level ?? ''}`}
         aria-pressed={!!mark}
         aria-label={`${mark ? 'Deshacer' : 'Completar'}: ${habit.name}`}
-        onClick={() => setCompletion(habit.id, day, mark ? null : 'full')}
+        onClick={() => {
+          if (!mark) buzz()
+          setCompletion(habit.id, day, mark ? null : 'full')
+        }}
       >
         <Check />
       </button>
@@ -63,12 +63,24 @@ function HabitRow({ data, day }: { data: HabitData; day: string }) {
         )}
         {st.atRisk && !mark && <div className="sub risk">No falles hoy y mantienes la racha</div>}
         {!mark && habit.tiny && (
-          <button className="link" onClick={() => setCompletion(habit.id, day, 'tiny')}>
+          <button
+            className="link"
+            onClick={() => {
+              buzz()
+              setCompletion(habit.id, day, 'tiny')
+            }}
+          >
             Hoy, versión mínima: {habit.tiny}
           </button>
         )}
         {mark?.level === 'tiny' && (
-          <button className="link" onClick={() => setCompletion(habit.id, day, 'full')}>
+          <button
+            className="link"
+            onClick={() => {
+              buzz()
+              setCompletion(habit.id, day, 'full')
+            }}
+          >
             Versión mínima hecha · ¿lo completaste entero?
           </button>
         )}
@@ -76,7 +88,9 @@ function HabitRow({ data, day }: { data: HabitData; day: string }) {
 
       {st.current > 0 && (
         <div className="streak">
-          <strong>{st.current}</strong>
+          <strong key={st.current} className="bump">
+            {st.current}
+          </strong>
           <small>
             {st.unit}
             {st.current === 1 ? '' : 's'}
@@ -111,6 +125,8 @@ export default function Today({ onAdd }: { onAdd: () => void }) {
   const doneCount = visible.filter(d => d.done.has(day)).length
   // Solo se muestran las franjas si al menos un hábito tiene una asignada.
   const showGroups = visible.some(d => d.habit.period)
+  const msg = message(doneCount, visible.length)
+  let order = 0 // posición en pantalla, para escalonar la entrada de las filas
 
   return (
     <>
@@ -140,13 +156,15 @@ export default function Today({ onAdd }: { onAdd: () => void }) {
                 {showGroups && <h2 className="group">{label}</h2>}
                 <ul className="list">
                   {items.map(d => (
-                    <HabitRow key={d.habit.id} data={d} day={day} />
+                    <HabitRow key={d.habit.id} data={d} day={day} index={order++} />
                   ))}
                 </ul>
               </section>
             )
           })}
-          <p className="note">{message(doneCount, visible.length)}</p>
+          <p className="note" key={msg}>
+            {msg}
+          </p>
         </>
       )}
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { restoreHabit, SOFT_HABIT_LIMIT, type Habit } from './db'
 import { consistency, describeSchedule, streak } from './habits'
 import { useHabitData, useToday } from './hooks'
@@ -41,11 +41,11 @@ export default function HabitList({ startNew = false }: { startNew?: boolean }) 
       </header>
 
       <ul className="list">
-        {active.map(({ habit, done }) => {
+        {active.map(({ habit, done }, i) => {
           const st = streak(habit, done, day)
           const pct = consistency(habit, done, day)
           return (
-            <li key={habit.id}>
+            <li key={habit.id} style={{ '--i': i } as CSSProperties}>
               <button className="item" onClick={() => setEditing(habit)}>
                 <div className="body">
                   <div className="title">{habit.name}</div>
