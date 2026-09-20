@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { exportBackup, importBackup, lastBackupAt } from './transfer'
+import { Capacitor } from '@capacitor/core'
+import { canShareBackup, exportBackup, importBackup, lastBackupAt, shareBackup } from './transfer'
 
 function ago(ts: number | null) {
   if (!ts) return 'nunca'
@@ -28,18 +29,38 @@ export default function Backup() {
       <h2>Copia de seguridad</h2>
       <p className="sub">
         Tus datos viven solo en este dispositivo. Última copia: {ago(last)}.
+        {canShareBackup() && ' Para pasarlos a otro dispositivo usa Compartir y, allí, Importar.'}
       </p>
       <div className="actions">
-        <button
-          className="btn"
-          onClick={async () => {
-            await exportBackup()
-            setLast(lastBackupAt())
-            setMsg('')
-          }}
-        >
-          Exportar
-        </button>
+        {!Capacitor.isNativePlatform() && (
+          <button
+            className="btn"
+            onClick={async () => {
+              await exportBackup()
+              setLast(lastBackupAt())
+              setMsg('')
+            }}
+          >
+            Exportar
+          </button>
+        )}
+        {canShareBackup() && (
+          <button
+            className={Capacitor.isNativePlatform() ? 'btn' : 'btn ghost'}
+            onClick={async () => {
+              try {
+                if (await shareBackup()) {
+                  setLast(lastBackupAt())
+                  setMsg('')
+                }
+              } catch {
+                setMsg('No se pudo abrir el menú de compartir.')
+              }
+            }}
+          >
+            {Capacitor.isNativePlatform() ? 'Guardar o compartir copia' : 'Compartir'}
+          </button>
+        )}
         <button className="btn ghost" onClick={() => input.current?.click()}>
           Importar
         </button>

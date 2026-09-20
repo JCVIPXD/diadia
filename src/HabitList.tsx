@@ -1,9 +1,10 @@
 import { useState, type CSSProperties } from 'react'
 import { restoreHabit, SOFT_HABIT_LIMIT, type Habit } from './db'
-import { consistency, describeSchedule, streak } from './habits'
+import { consistency, describeSchedule, isPaused, streak } from './habits'
 import { useHabitData, useToday } from './hooks'
 import Backup from './Backup'
 import HabitForm from './HabitForm'
+import SettingsPanel from './SettingsPanel'
 
 export default function HabitList({ startNew = false }: { startNew?: boolean }) {
   const data = useHabitData()
@@ -51,10 +52,15 @@ export default function HabitList({ startNew = false }: { startNew?: boolean }) 
                   <div className="title">{habit.name}</div>
                   <div className="sub">
                     {describeSchedule(habit)}
+                    {habit.goal && ` · ${habit.goal.amount} ${habit.goal.unit}`}
                     {st.best > 0 && ` · mejor racha ${st.best} ${st.unit}${st.best === 1 ? '' : 's'}`}
                   </div>
                 </div>
-                {pct !== null && <span className="pct" title="Cumplimiento de los últimos 28 días">{pct}%</span>}
+                {isPaused(habit, day) ? (
+                  <span className="badge">En pausa</span>
+                ) : (
+                  pct !== null && <span className="pct" title="Cumplimiento de los últimos 28 días">{pct}%</span>
+                )}
               </button>
             </li>
           )
@@ -75,6 +81,7 @@ export default function HabitList({ startNew = false }: { startNew?: boolean }) 
         </details>
       )}
 
+      <SettingsPanel />
       <Backup />
     </>
   )

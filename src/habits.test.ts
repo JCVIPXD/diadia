@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Habit, Schedule } from './db'
-import { addDays, consistency, isScheduled, streak, today, weekStart } from './habits'
+import { addDays, consistency, heatmap, isPaused, isScheduled, streak, today, weekStart, weekSummary } from './habits'
 
 // Hoy = sábado 2026-09-19 (el día "cambia" a las 4am, así que a las 12:00 no hay ambigüedad).
 const TODAY = '2026-09-19'
@@ -98,5 +98,63 @@ describe('consistency', () => {
     // creado el 09-01: 18 días desde el 1 al 18 (hoy pendiente no cuenta); cumplió 9
     const done = new Set(Array.from({ length: 9 }, (_, i) => addDays('2026-09-01', i)))
     expect(consistency(h, done, TODAY)).toBe(50)
+  })
+})
+
+describe('pausas', () => {
+  const paused = (from: string, to?: string): Habit => ({ ...habit({ type: 'daily' }), pauses: [{ from, to }] })
+
+  it('isPaused respeta inicio, fin y pausa abierta', () => {
+    const h = paused('2026-09-10', '2026-09-12')
+    expect(isPaused(h, '2026-09-09')).toBe(false)
+    expect(isPaused(h, '2026-09-10')).toBe(true)
+    expect(isPaused(h, '2026-09-12')).toBe(true)
+    expect(isPaused(h, '2026-09-13')).toBe(false)
+    expect(isPaused(paused('2026-09-10'), '2027-01-01')).toBe(true)
+    expect(isScheduled(h, '2026-09-11')).toBe(false)
+  })
+
+  it('los días en pausa no rompen la racha', () => {
+    // cumplió hasta el 09-09, pausa del 10 al 17 (8 días sin marcar), vuelve el 18 y el 19
+    const h = paused('2026-09-10', '2026-09-17')
+    const done = new Set(['2026-09-08', '2026-09-09', '2026-09-18', '2026-09-19'])
+    const s = streak(h, done, TODAY)
+    expect(s.current).toBe(4) // la pausa no cuenta a favor ni en contra
+  })
+
+  it('sin la pausa, esos mismos días sí la romperían', () => {
+    const done = new Set(['2026-09-08', '2026-09-09', '2026-09-18', '2026-09-19'])
+    expect(streak(habit({ type: 'daily' }), done, TODAY).current).toBe(2)
+  })
+})
+
+describe('weekSummary', () => {
+  const week = '2026-09-14' // lunes de la semana de TODAY (sábado 19)
+  it('diario: cuenta lo hecho frente a lo que tocaba hasta hoy', () => {
+    const done = new Set(['2026-09-14', '2026-09-15', '2026-09-17'])
+    // lun–vie tocaban 5; hoy (sábado) aún puede cumplirse, así que no cuenta
+    expect(weekSummary(habit({ type: 'daily' }), done, week, TODAY)).toEqual({ got: 3, expected: 5 })
+  })
+  it('semanal: hechas frente a la meta', () => {
+    const done = new Set(['2026-09-14', '2026-09-16'])
+    expect(weekSummary(habit({ type: 'weekly', times: 3 }), done, week, TODAY)).toEqual({ got: 2, expected: 3 })
+  })
+})
+
+describe('heatmap', () => {
+  it('marca cumplidos, fallos y días fuera de rango', () => {
+    const h = habit({ type: 'daily' }, '2026-09-10')
+    const marks = new Map([
+      ['2026-09-17', { id: 'a', habitId: 'h', date: '2026-09-17', level: 'full' as const, updatedAt: 1 }],
+      ['2026-09-18', { id: 'b', habitId: 'h', date: '2026-09-18', level: 'tiny' as const, updatedAt: 1 }],
+    ])
+    const cells = heatmap(h, marks, TODAY, 2)
+    expect(cells).toHaveLength(14)
+    const kind = (d: string) => cells.find(c => c.date === d)?.kind
+    expect(kind('2026-09-17')).toBe('full')
+    expect(kind('2026-09-18')).toBe('tiny')
+    expect(kind('2026-09-16')).toBe('miss') // programado y sin marca
+    expect(kind('2026-09-08')).toBe('off') // antes de crear el hábito (10)
+    expect(kind('2026-09-20')).toBe('off') // futuro
   })
 })

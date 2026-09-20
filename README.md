@@ -22,10 +22,21 @@ src/
   Today.tsx      pantalla "Hoy"
   HabitList.tsx  lista de hábitos
   HabitForm.tsx  crear / editar
-  Tasks.tsx      tareas de una sola vez (hoy, mañana, pendientes de antes)
-  Backup.tsx     exportar / importar copia de seguridad
+  Tasks.tsx      tareas de una sola vez (hoy, mañana, pendientes de antes; editar y deshacer)
+  CheckIn.tsx    sueño, ánimo, energía y nota del día
+  Progress.tsx   revisión semanal, calendario de calor por hábito, resumen de sueño
+  SettingsPanel.tsx  tema, hora de corte del día, hora objetivo de dormir
+  Backup.tsx     exportar / importar / compartir copia de seguridad
   transfer.ts    lógica de exportar e importar (fusión por fila)
+  sleep.ts       cálculos de sueño (duración, regularidad)
+  reminderPlan.ts  planifica los avisos (lógica pura, con tests)
+  reminders.ts   programa las notificaciones en Android (Capacitor)
+  settings.ts    preferencias del dispositivo
+  updates.ts     aviso de "nueva versión"
+android/         proyecto nativo (Capacitor)
 ```
+
+Cuidado con los nombres de archivo que solo se diferencian en mayúsculas (`Settings.tsx` vs `settings.ts`): en Windows son el mismo archivo y rompen el build.
 
 ## Decisiones de diseño
 
@@ -40,7 +51,23 @@ src/
 
 ## Publicación (GitHub Pages)
 
-`.github/workflows/deploy.yml` compila y publica en cada push a `main`. La app se sirve en `/<nombre-del-repo>/` (variable `BASE_PATH`). Solo se publica el código; los datos quedan en cada dispositivo. En el repositorio hay que activar Settings → Pages → Source: GitHub Actions.
+`.github/workflows/deploy.yml` corre los tests, compila y publica en cada push a `main`. La app se sirve en `/<nombre-del-repo>/` (variable `BASE_PATH`). Solo se publica el código; los datos quedan en cada dispositivo. Al haber una versión nueva, la app avisa ("Hay una versión nueva · Actualizar").
+
+## App de Android (recordatorios)
+
+Una PWA no puede programar notificaciones de forma fiable, así que los recordatorios viven en una app nativa (Capacitor) que envuelve la misma web. Requisitos: JDK 17+ y el Android SDK (plataforma 36).
+
+```bash
+npm run android:sync          # compila la web y la copia al proyecto Android
+cd android
+./gradlew assembleDebug       # genera app/build/outputs/apk/debug/app-debug.apk
+```
+
+- Crea `android/local.properties` con `sdk.dir=<ruta al Android SDK>` (no se sube a git).
+- Instalar el APK en el celular requiere permitir "instalar apps desconocidas". Es una versión de depuración, sin firmar para tienda.
+- **La app instalada guarda sus datos aparte de la PWA de Chrome.** Para pasar de una a otra: Exportar en una e Importar en la otra.
+- Los avisos se reprograman solos (14 días hacia delante) al cambiar hábitos, marcas o ajustes, y no avisan de lo que ya hiciste ese día.
+- Por privacidad la copia de seguridad automática de Android está desactivada (`allowBackup=false`).
 
 ## Movimiento
 
@@ -51,23 +78,24 @@ Todo con CSS (sin librerías): transición al cambiar de pantalla, píldora desl
 Hecho:
 
 - [x] Hábitos, pantalla Hoy, versión mínima, racha con perdón, franjas del día
-- [x] Tareas de hoy / mañana / pendientes de antes
-- [x] Copia de seguridad con fusión, publicación en GitHub Pages
+- [x] Tareas de hoy / mañana / pendientes de antes (editar, deshacer)
+- [x] Copia de seguridad con fusión (exportar, importar, compartir); publicación en GitHub Pages
 - [x] Animaciones y transiciones
+- [x] Corregir días anteriores (hasta 30 días atrás)
+- [x] Check-in diario (ánimo, energía, sueño, nota) y revisión semanal
+- [x] Seguimiento del sueño (duración, regularidad, noches en la hora objetivo)
+- [x] Progreso: calendario de calor de 12 semanas y estadísticas por hábito
+- [x] Hábitos con cantidad (vasos, minutos, páginas)
+- [x] Pausa de hábitos sin perder la racha
+- [x] Ajustes: tema claro/oscuro, hora de corte del día
+- [x] Recordatorios en Android (Capacitor): código y APK; **sin probar en un dispositivo real**
+- [x] Tests automáticos de la lógica, la fusión de copias y el plan de recordatorios
 
-Pendiente, por prioridad:
+Pendiente:
 
-1. [ ] **Marcar o corregir días anteriores.** Hoy solo se puede marcar el día actual: olvidar marcar ayer rompe la racha sin motivo.
-2. [ ] **Recordatorios y alarmas en Android** (envoltorio Capacitor con notificaciones locales; una PWA sola no puede programarlas de forma fiable). Hora opcional por hábito y tarea.
-3. [ ] **Seguimiento del sueño:** hora de acostarse y de levantarse, y regularidad frente a la hora objetivo.
-4. [ ] **Detalle del hábito:** calendario de calor, mejor racha, cumplimiento por semana.
-5. [ ] **Check-in diario** (ánimo, energía) y **revisión semanal**.
-6. [ ] **Sincronizar celular y laptop sin servidor de terceros** (hoy es exportar/importar a mano).
-7. [ ] Hábitos numéricos (minutos, vasos de agua).
-8. [ ] Pausa o vacaciones sin perder la racha.
-9. [ ] Editar y reordenar tareas; deshacer al quitar una tarea; tareas con hora o franja.
-10. [ ] Notas por día.
-11. [ ] Ajustes: tema claro/oscuro, hora de corte del día (hoy fija a las 4am).
-12. [ ] Tests automáticos de importar/fusionar y de las pantallas (hoy solo está probada la lógica de rachas).
-13. [ ] Iconos y pantalla de inicio pulidos, y aviso de "nueva versión disponible".
-14. [ ] Si algún día es comercial: cuentas, sincronización en la nube y monetización.
+1. [ ] **Probar los recordatorios en un Android real** y ajustar lo que falle (batería, permisos, hora exacta).
+2. [ ] **Sincronizar celular y laptop sin servidor de terceros.** Hoy es exportar/importar (con "Compartir" en Android). Sincronización directa: WebRTC con emparejamiento por código o QR.
+3. [ ] Reordenar tareas; tareas con hora o franja del día.
+4. [ ] Tests de pantallas (hoy solo hay de lógica y datos).
+5. [ ] Firmar el APK para poder actualizarlo sin desinstalar.
+6. [ ] Si algún día es comercial: cuentas, sincronización en la nube y monetización.

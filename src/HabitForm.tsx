@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
-import { archiveHabit, deleteHabit, saveHabit, SOFT_HABIT_LIMIT, type Habit, type Period, type Schedule } from './db'
+import { archiveHabit, deleteHabit, saveHabit, setPauses, SOFT_HABIT_LIMIT, type Habit, type Period, type Schedule } from './db'
+import { addDays, today } from './habits'
+import { remindersAvailable } from './reminders'
 
 // Lunes primero; el valor es el día JS (0 = domingo).
 const DAYS: [string, number][] = [['L', 1], ['M', 2], ['X', 3], ['J', 4], ['V', 5], ['S', 6], ['D', 0]]
@@ -23,11 +25,19 @@ export default function HabitForm({
   const [cue, setCue] = useState(habit?.cue ?? '')
   const [tiny, setTiny] = useState(habit?.tiny ?? '')
   const [period, setPeriod] = useState<Period | undefined>(habit?.period)
+  const [time, setTime] = useState(habit?.time ?? '')
+  const [counted, setCounted] = useState(!!habit?.goal)
+  const [amount, setAmount] = useState(String(habit?.goal?.amount ?? 8))
+  const [unit, setUnit] = useState(habit?.goal?.unit ?? '')
   const [kind, setKind] = useState<Kind>(s?.type ?? 'daily')
   const [days, setDays] = useState<number[]>(s?.type === 'days' ? s.days : [1, 2, 3, 4, 5])
   const [times, setTimes] = useState(s?.type === 'weekly' ? s.times : 3)
 
-  const valid = name.trim() !== '' && (kind !== 'days' || days.length > 0)
+  const amountNum = Number(amount)
+  const goalValid = !counted || (Number.isFinite(amountNum) && amountNum >= 1 && unit.trim() !== '')
+  const valid = name.trim() !== '' && (kind !== 'days' || days.length > 0) && goalValid
+
+  const openPause = habit?.pauses?.findLast(p => !p.to)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -45,12 +55,28 @@ export default function HabitForm({
         name: name.trim(),
         identity: identity.trim() || undefined,
         cue: cue.trim() || undefined,
-        tiny: tiny.trim() || undefined,
+        // La versión mínima no aplica a hábitos con cantidad: ahí la "versión pequeña" es avanzar algo.
+        tiny: counted ? undefined : tiny.trim() || undefined,
         period,
+        time: time || undefined,
+        goal: counted ? { amount: Math.round(amountNum), unit: unit.trim() } : undefined,
         schedule,
       },
       habit?.id,
     )
+    onClose()
+  }
+
+  async function togglePause() {
+    if (!habit) return
+    const pauses = habit.pauses ?? []
+    if (openPause) {
+      // Reanudar: la pausa termina ayer (si empezó hoy, simplemente se descarta).
+      const end = addDays(today(), -1)
+      await setPauses(habit.id, openPause.from > end ? pauses.filter(p => p !== openPause) : pauses.map(p => (p === openPause ? { ...p, to: end } : p)))
+    } else {
+      await setPauses(habit.id, [...pauses, { from: today() }])
+    }
     onClose()
   }
 
@@ -75,11 +101,27 @@ export default function HabitForm({
       </div>
 
       <div className="field">
-        <label htmlFor="tiny">
-          Versión mínima <span className="hint">(para los días de pereza)</span>
-        </label>
-        <input id="tiny" type="text" value={tiny} onChange={e => setTiny(e.target.value)} placeholder="Leer 1 página" />
+        <span>¿Se mide con una cantidad?</span>
+        <div className="seg">
+          <button type="button" aria-pressed={!counted} onClick={() => setCounted(false)}>Sí/No</button>
+          <button type="button" aria-pressed={counted} onClick={() => setCounted(true)}>Con cantidad</button>
+        </div>
+        {counted && (
+          <div className="goal">
+            <input aria-label="Meta" type="number" inputMode="numeric" min={1} value={amount} onChange={e => setAmount(e.target.value)} />
+            <input aria-label="Unidad" type="text" value={unit} onChange={e => setUnit(e.target.value)} placeholder="vasos, minutos, páginas…" />
+          </div>
+        )}
       </div>
+
+      {!counted && (
+        <div className="field">
+          <label htmlFor="tiny">
+            Versión mínima <span className="hint">(para los días de pereza)</span>
+          </label>
+          <input id="tiny" type="text" value={tiny} onChange={e => setTiny(e.target.value)} placeholder="Leer 1 página" />
+        </div>
+      )}
 
       <div className="field">
         <label htmlFor="identity">
@@ -96,6 +138,20 @@ export default function HabitForm({
               {label}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="field">
+        <label htmlFor="time">
+          Recordatorio <span className="hint">{remindersAvailable() ? '(opcional)' : '(suena solo en la app de Android)'}</span>
+        </label>
+        <div className="timerow">
+          <input id="time" type="time" value={time} onChange={e => setTime(e.target.value)} />
+          {time && (
+            <button type="button" className="link inline muted" onClick={() => setTime('')}>
+              Quitar
+            </button>
+          )}
         </div>
       </div>
 
@@ -140,29 +196,35 @@ export default function HabitForm({
       </div>
 
       {habit && (
-        <div className="actions">
-          <button
-            className="btn ghost"
-            type="button"
-            onClick={async () => {
-              await archiveHabit(habit.id)
-              onClose()
-            }}
-          >
-            Archivar
-          </button>
-          <button
-            className="btn danger"
-            type="button"
-            onClick={async () => {
-              if (!confirm(`¿Eliminar "${habit.name}" y su historial?`)) return
-              await deleteHabit(habit.id)
-              onClose()
-            }}
-          >
-            Eliminar
-          </button>
-        </div>
+        <>
+          <div className="actions">
+            <button className="btn ghost" type="button" onClick={togglePause}>
+              {openPause ? 'Reanudar' : 'Pausar'}
+            </button>
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={async () => {
+                await archiveHabit(habit.id)
+                onClose()
+              }}
+            >
+              Archivar
+            </button>
+            <button
+              className="btn danger"
+              type="button"
+              onClick={async () => {
+                if (!confirm(`¿Eliminar "${habit.name}" y su historial?`)) return
+                await deleteHabit(habit.id)
+                onClose()
+              }}
+            >
+              Eliminar
+            </button>
+          </div>
+          <p className="hint">Pausar sirve para vacaciones o una mala racha de salud: los días en pausa no rompen tu racha.</p>
+        </>
       )}
     </form>
   )
