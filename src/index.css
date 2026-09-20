@@ -96,7 +96,8 @@ main { flex: 1; padding: 20px 16px 96px; }
 }
 .tabs button {
   position: relative;
-  padding: 10px;
+  padding: 10px 4px;
+  font-size: 0.9rem;
   border: 0;
   border-radius: 12px;
   background: none;
@@ -393,11 +394,18 @@ h2.group, main section > h2, .tasks h2, .backup h2 {
 .counter output { min-width: 5.5em; font-size: 0.8rem; color: var(--muted); text-align: right; }
 
 .card { padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-.checkin .card { display: flex; flex-direction: column; gap: 14px; }
+.checkin { display: flex; flex-direction: column; gap: 22px; }
+.checkin .group { display: flex; flex-direction: column; gap: 10px; }
+.checkin .group h2 { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--text); }
+.checkin .group .sub { margin: -6px 0 0; }
+.intro { margin: -4px 0 16px; color: var(--muted); font-size: 0.9rem; }
+.intro strong { color: var(--text); }
 .times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .times label { display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; color: var(--muted); }
-.slept { margin: -6px 0 0; color: var(--accent); }
-.scale { display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; color: var(--muted); }
+.slept { margin: 0; color: var(--accent); font-weight: 600; }
+.scale { display: flex; flex-direction: column; gap: 8px; }
+.scale-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.scale-head span { font-size: 0.8rem; color: var(--muted); }
 .scale .chips button { font-size: 1.1rem; padding: 8px 0; }
 .note-input { font-size: 0.9rem; }
 

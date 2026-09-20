@@ -1,13 +1,14 @@
 import { useState, type CSSProperties } from 'react'
+import CheckIn from './CheckIn'
 import HabitList from './HabitList'
 import Progress from './Progress'
 import { useReminders } from './reminders'
 import Today from './Today'
 import { applyUpdate, useUpdateReady } from './updates'
 
-type Tab = 'today' | 'progress' | 'habits'
+type Tab = 'today' | 'checkin' | 'progress' | 'habits'
 
-const TABS: [Tab, string][] = [['today', 'Hoy'], ['progress', 'Progreso'], ['habits', 'Hábitos']]
+const TABS: [Tab, string][] = [['today', 'Hoy'], ['checkin', 'Check-in'], ['progress', 'Progreso'], ['habits', 'Hábitos']]
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('today')
@@ -21,6 +22,7 @@ export default function App() {
         {/* key: al cambiar de pestaña la pantalla entra con una transición suave */}
         <div key={tab} className="screen">
           {tab === 'today' && <Today onAdd={() => { setCreating(true); setTab('habits') }} />}
+          {tab === 'checkin' && <CheckIn />}
           {tab === 'progress' && <Progress />}
           {tab === 'habits' && <HabitList startNew={creating} />}
         </div>

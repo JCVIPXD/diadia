@@ -116,7 +116,7 @@ export default function Tasks({ day }: { day: string }) {
       )}
 
       <h2>
-        Tareas de hoy
+        Itinerario de hoy
         {todays.length > 0 && <span className="count"> · {doneCount}/{todays.length}</span>}
       </h2>
 
@@ -133,7 +133,7 @@ export default function Tasks({ day }: { day: string }) {
           type="text"
           value={title}
           onChange={e => setTitle(e.target.value)}
-          placeholder="Ej: enviar la tarea"
+          placeholder="Ej: limpiar mi cuarto, enviar la tarea"
           aria-label="Nueva tarea"
         />
         <button className="btn" type="submit" disabled={!title.trim()}>

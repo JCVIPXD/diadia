@@ -1,5 +1,4 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import CheckIn from './CheckIn'
 import Check from './Check'
 import { setCompletion, type Period } from './db'
 import { buzz } from './haptics'
@@ -223,7 +222,6 @@ export default function Today({ onAdd }: { onAdd: () => void }) {
         </>
       )}
 
-      <CheckIn date={day} />
       {isToday && <Tasks day={todayStr} />}
     </>
   )

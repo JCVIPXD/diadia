@@ -22,8 +22,8 @@ src/
   Today.tsx      pantalla "Hoy"
   HabitList.tsx  lista de hábitos
   HabitForm.tsx  crear / editar
-  Tasks.tsx      tareas de una sola vez (hoy, mañana, pendientes de antes; editar y deshacer)
-  CheckIn.tsx    sueño, ánimo, energía y nota del día
+  Tasks.tsx      "Itinerario de hoy": tareas de una sola vez (hoy, mañana, pendientes de antes; editar y deshacer)
+  CheckIn.tsx    pestaña Check-in: sueño, ánimo, energía y nota del día
   Progress.tsx   revisión semanal, calendario de calor por hábito, resumen de sueño
   SettingsPanel.tsx  tema, hora de corte del día, hora objetivo de dormir
   Backup.tsx     exportar / importar / compartir copia de seguridad

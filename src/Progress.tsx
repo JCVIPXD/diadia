@@ -136,7 +136,7 @@ function Sleep({ checkins, todayStr }: { checkins: Map<string, Checkin>; todaySt
       <h2>Sueño · últimos 14 días</h2>
       <div className="card">
         {!stats ? (
-          <p className="sub">Anota a qué hora te acostaste y te levantaste en el check-in de cada día y aquí verás tu regularidad.</p>
+          <p className="sub">Anota a qué hora te acostaste y te levantaste en la pestaña Check-in y aquí verás tu regularidad.</p>
         ) : (
           <>
             <div className="bars" role="img" aria-label={`Horas dormidas en los últimos 14 días, promedio ${formatDuration(stats.avgMinutes)}`}>
